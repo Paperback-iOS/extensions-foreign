@@ -52,23 +52,11 @@ export const parseChapters = ($: CheerioStatic, mangaId: string): Chapter[] => {
 
     const allChapters = $('li', '.list_block ').toArray()
     const chapters: Chapter[] = []
-    let index
+    
     for (let chapter of allChapters) {
         const id: string = ( $('a', chapter).attr('href')?.split('/').pop() ?? '' ).replace('.html', '')
         const name: string = $('a', chapter).text() ?? ''
-        let tempChapNum: number = Number(name.match(/\d+/) ?? 0 )
-
-        if (tempChapNum == 0)
-        {
-            index = allChapters.indexOf(chapter)
-            if (index < allChapters.length - 1)
-            {
-                const nextName: string = $('a', allChapters[index+1]).text() ?? ''
-                tempChapNum = Number(nextName.match(/\d+/) ?? 0 ) + 0.5
-            }
-        }
-
-        const chapNum: number = tempChapNum
+        const chapNum: number = Number(name.match(/\d+/) ?? 0 )
         chapters.push(createChapter({
             id,
             mangaId,
