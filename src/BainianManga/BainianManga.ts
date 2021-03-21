@@ -32,6 +32,10 @@ import {
     websiteBaseURL: `${BM_DOMAIN}/comic.html`,
     sourceTags: [
         {
+            text: "Notifications",
+            type: TagType.GREEN
+        },
+        {
             text: "中文",
             type: TagType.GREY
         }
