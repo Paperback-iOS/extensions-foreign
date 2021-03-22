@@ -22,7 +22,7 @@ import {
   };
   
   export const BainianMangaInfo: SourceInfo = {
-    version: '1.0.2',
+    version: '1.1.0',
     name: 'BainianManga (百年漫画)',
     icon: 'favicon.png',
     author: 'getBoolean',
@@ -128,38 +128,71 @@ import {
  
     async getHomePageSections(sectionCallback: (section: HomeSection) => void): Promise<void> {
         // Give Paperback a skeleton of what these home sections should look like to pre-render them
-        const section1 = createHomeSection({ id: 'a_recommended', title: '推荐漫画' })
-        const section3 = createHomeSection({ id: 'hot_comics', title: '热门漫画', view_more: true })
-        const section2 = createHomeSection({ id: 'z_new_updates', title: '最近更新', view_more: true })
 
-        // Fill the homsections with data
-        const request1 = createRequestObject({
-            url: `${BM_DOMAIN}/comic.html`,
-            method,
-        })
+        const sectionRequests = [
+            {
+                request: createRequestObject({
+                    url: `${BM_DOMAIN}/comic.html`,
+                    method: 'GET'
+                }),
+                section: createHomeSection({
+                    id: 'a_recommended',
+                    title: '推荐漫画'
+                }),
+            },
+            {
+                request: createRequestObject({
+                    url: `${BM_DOMAIN}/page/hot/1.html`,
+                    method: 'GET'
+                }),
+                section: createHomeSection({
+                    id: 'hot_comics',
+                    title: '热门漫画',
+                    view_more: true,
+                }),
+            },
+            {
+                request: createRequestObject({
+                    url: `${BM_DOMAIN}/page/new/1.html`,
+                    method: 'GET'
+                }),
+                section: createHomeSection({
+                    id: 'z_new_updates',
+                    title: '最近更新',
+                    view_more: true
+                }),
+            },
+        ]
 
-        const request2 = createRequestObject({
-            url: `${BM_DOMAIN}/page/hot/1.html`,
-            method,
-        })
+        const promises: Promise<void>[] = []
 
-        const request3 = createRequestObject({
-            url: `${BM_DOMAIN}/page/new/1.html`,
-            method,
-        })
+        for (const sectionRequest of sectionRequests) {
+            // Let the app load empty sections
+            sectionCallback(sectionRequest.section)
 
-        const response1 = await this.requestManager.schedule(request1, 1)
-        const $1 = this.cheerio.load(response1.data)
+            // Get the section data
+            promises.push(
+                this.requestManager.schedule(sectionRequest.request, 1).then(response => {
+                    const $ = this.cheerio.load(response.data)
+                    switch(sectionRequest.section.id) {
+                        case 'a_recommended':
+                            sectionRequest.section.items = parseHomeSections($)
+                            break
+                        case 'hot_comics':
+                            sectionRequest.section.items = parseHotManga($)
+                            break
+                        case 'z_new_updates':
+                            sectionRequest.section.items = parseNewManga($)
+                            break
+                        default:
+                    }
+                    sectionCallback(sectionRequest.section)
+                }),
+            )
+        }
 
-        const response2 = await this.requestManager.schedule(request2, 1)
-        const $2 = this.cheerio.load(response2.data)
-
-        const response3 = await this.requestManager.schedule(request3, 1)
-        const $3 = this.cheerio.load(response3.data)
-
-        parseHomeSections($1, section1, sectionCallback)
-        parseHotManga($2, section2, sectionCallback)
-        parseNewManga($3, section3, sectionCallback)
+        // Make sure the function completes
+        await Promise.all(promises)
     }
   
 
