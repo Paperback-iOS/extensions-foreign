@@ -1,5 +1,7 @@
 import { Chapter, ChapterDetails, HomeSection, LanguageCode, Manga, MangaStatus, MangaTile, MangaUpdates, PagedResults, SearchRequest, TagSection } from "paperback-extensions-common";
 
+const ChineseNumber = require('./external/chinese-numbers.js');
+
 export const parseMangaDetails = ($: CheerioStatic, mangaId: string): [Manga, string] => {
     const json = $('[type=application\\/ld\\+json]').html()?.replace(/\t*\n*/g, '') ?? ''
     const parsedJson = JSON.parse(json)
@@ -56,7 +58,8 @@ export const parseChapters = ($: CheerioStatic, mangaId: string): Chapter[] => {
     for (let chapter of allChapters) {
         const id: string = ( $('a', chapter).attr('href')?.split('/').pop() ?? '' ).replace('.html', '')
         const name: string = $('a', chapter).text() ?? ''
-        const chapNum: number = Number(name.match(/\d+/) ?? 0 )
+        const convertedString = new ChineseNumber(name).toArabicString();
+        const chapNum: number = Number(convertedString.match(/\d+/) ?? 0 )
         chapters.push(createChapter({
             id,
             mangaId,
