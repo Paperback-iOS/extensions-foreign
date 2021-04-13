@@ -21,7 +21,7 @@ export const ManaTokiInfo: SourceInfo = {
   icon: 'icon.jpg',
   author: 'nar1n',
   authorWebsite: 'https://github.com/nar1n',
-  description: 'Extension that pulls manga from 마나토끼',
+  description: 'Extension that pulls manga from ManaToki',
   hentaiSource: false,
   websiteBaseURL: MANATOKI_DOMAIN
 }
