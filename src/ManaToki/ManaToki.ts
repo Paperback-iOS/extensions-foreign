@@ -1,14 +1,15 @@
 import {
-  Source,
-  Manga,
-  Chapter,
-  ChapterDetails,
-  HomeSection,
-  SearchRequest,
-  PagedResults,
-  SourceInfo,
+    Source,
+    Manga,
+    Chapter,
+    ChapterDetails,
+    HomeSection,
+    SearchRequest,
+    PagedResults,
+    SourceInfo,
+    MangaUpdates
 } from "paperback-extensions-common"
-import {parseChapterDetails, parseChapters, parseHomeSections, parseMangaDetails, parseSearch} from "./ManaTokiParser"
+import {parseChapterDetails, parseChapters, parseHomeUpdates, parseHomeList, parseMangaDetails, parseSearch, parseUpdatedMangas} from "./ManaTokiParser"
 
 const MANATOKI_DOMAIN = 'https://manatoki95.net'
 const MANATOKI_COMIC = MANATOKI_DOMAIN + '/comic/'
@@ -16,124 +17,200 @@ const method = 'GET'
 
 
 export const ManaTokiInfo: SourceInfo = {
-  version: '1.0.0',
-  name: '마나토끼',
-  icon: 'icon.jpg',
-  author: 'nar1n',
-  authorWebsite: 'https://github.com/nar1n',
-  description: 'Extension that pulls manga from ManaToki',
-  hentaiSource: false,
-  websiteBaseURL: MANATOKI_DOMAIN
+    version: '1.0.1',
+    name: '마나토끼',
+    icon: 'icon.png',
+    author: 'nar1n',
+    authorWebsite: 'https://github.com/nar1n',
+    description: 'Extension that pulls manga from ManaToki',
+    hentaiSource: false,
+    websiteBaseURL: MANATOKI_DOMAIN
 }
 
 export class ManaToki extends Source {
-  getMangaShareUrl(mangaId: string): string | null { return `${MANATOKI_COMIC}${mangaId}` }
+    getMangaShareUrl(mangaId: string): string | null { return `${MANATOKI_COMIC}${mangaId}` }
 
-  requestManager = createRequestManager({
-    requestsPerSecond: 1,
-    requestTimeout: 25000
-  })
-  
-
-  async getMangaDetails(mangaId: string): Promise<Manga> {
-    const request = createRequestObject({
-      url: MANATOKI_COMIC,
-      method,
-      param: mangaId
+    requestManager = createRequestManager({
+        requestsPerSecond: 2,
+        requestTimeout: 10000
     })
 
-    const response = await this.requestManager.schedule(request, 1)
-    let $ = this.cheerio.load(response.data)
+    async getMangaDetails(mangaId: string): Promise<Manga> {
+        const request = createRequestObject({
+            url: MANATOKI_COMIC,
+            method,
+            param: mangaId
+        })
 
-    // Checks whether a manga or chapter endpoint
-    if ($('div.view-content', 'div.col-sm-9').attr('style') == 'margin-bottom: 5px;') {
-      // Manga
-      return parseMangaDetails($, mangaId)
-    } else {
-      // Chapter
-      mangaId = $('a', $('div.toon-nav', 'div.navbar-wrapper')).last().attr('href')?.replace(MANATOKI_COMIC, '') ?? ''
-      const request = createRequestObject({
-        url: MANATOKI_COMIC,
-        method,
-        param: mangaId
-      })
-      const response = await this.requestManager.schedule(request, 1)
-      $ = this.cheerio.load(response.data)
-      return parseMangaDetails($, mangaId)
+        const response = await this.requestManager.schedule(request, 3)
+        let $ = this.cheerio.load(response.data)
+
+        return parseMangaDetails($, mangaId)
     }
-  }
 
-  async getChapters(mangaId: string): Promise<Chapter[]> {
-    const request = createRequestObject({
-      url: MANATOKI_COMIC,
-      method,
-      param: mangaId
-    })
+    async getChapters(mangaId: string): Promise<Chapter[]> {
+        const request = createRequestObject({
+            url: MANATOKI_COMIC,
+            method,
+            param: mangaId
+        })
 
-    const response = await this.requestManager.schedule(request, 1)
-    let $ = this.cheerio.load(response.data)
+        const response = await this.requestManager.schedule(request, 3)
+        let $ = this.cheerio.load(response.data)
 
-    // Checks whether a manga or chapter endpoint
-    if ($('div.view-content', 'div.col-sm-9').attr('style') == 'margin-bottom: 5px;') {
-      // Manga
-      return parseChapters($, mangaId)
-    } else {
-      // Chapter
-      mangaId = $('a', $('div.toon-nav', 'div.navbar-wrapper')).last().attr('href')?.replace(MANATOKI_COMIC, '') ?? ''
-      const request = createRequestObject({
-        url: MANATOKI_COMIC,
-        method,
-        param: mangaId
-      })
-      const response = await this.requestManager.schedule(request, 1)
-      $ = this.cheerio.load(response.data)
-      return parseChapters($, mangaId)
+        return parseChapters($, mangaId)
     }
-  }
 
-  async getChapterDetails(mangaId: string, chapterId: string): Promise<ChapterDetails> {
-    const request = createRequestObject({
-      url: MANATOKI_COMIC,
-      method,
-      param: chapterId
-    })
+    async getChapterDetails(mangaId: string, chapterId: string): Promise<ChapterDetails> {
+        const request = createRequestObject({
+            url: MANATOKI_COMIC,
+            method,
+            param: chapterId
+        })
 
-    const response = await this.requestManager.schedule(request, 1)
-    const $ = this.cheerio.load(response.data)
-    return parseChapterDetails($, this.cheerio.load, mangaId, chapterId)
-  }
+        const response = await this.requestManager.schedule(request, 3)
+        const $ = this.cheerio.load(response.data)
+        return parseChapterDetails($, this.cheerio.load, mangaId, chapterId)
+    }
 
-  async getHomePageSections(sectionCallback: (section: HomeSection) => void): Promise<void> {
-    // Give Paperback a skeleton of what these home sections should look like to pre-render them
-    const section1 = createHomeSection({ id: 'updates', title: '최신화' })
-    const section2 = createHomeSection({ id: 'manga_list', title: '만화목록'})
-    const sections = [section1, section2]
+    async getHomePageSections(sectionCallback: (section: HomeSection) => void): Promise<void> {
+        const sections = [
+            {
+                request: createRequestObject({
+                    url: `${MANATOKI_DOMAIN}/bbs/page.php?hid=update`,
+                    method: 'GET'
+                }),
+                section: createHomeSection({
+                    id: 'updates',
+                    title: '최신화',
+                    view_more: true,
+                }),
+            },
+            {
+                request: createRequestObject({
+                    url: `${MANATOKI_DOMAIN}/comic`,
+                    method: 'GET'
+                }),
+                section: createHomeSection({
+                    id: 'list',
+                    title: '만화목록',
+                    view_more: true
+                }),
+            },
+        ]
 
-    // Fill the homsections with data
-    const request = createRequestObject({
-      url: MANATOKI_DOMAIN,
-      method,
-    })
+    const promises: Promise<void>[] = []
 
-    const response = await this.requestManager.schedule(request, 1)
-    const $ = this.cheerio.load(response.data)
-    parseHomeSections($, sections, sectionCallback)
-  }
+    for (const section of sections) {
+        // Let the app load empty sections
+        sectionCallback(section.section)
 
-  async searchRequest(query: SearchRequest): Promise<PagedResults> {
-    const search = query.title ?? ''
-    const request = createRequestObject({
-      url: `${MANATOKI_DOMAIN}/comic?stx=`,
-      method,
-      param: encodeURI(search.replace(/ /g, '+'))
-    })
+        // Get the section data
+        promises.push(
+            this.requestManager.schedule(section.request, 3).then(response => {
+                const $ = this.cheerio.load(response.data)
+                switch (section.section.id) {
+                    case 'updates':
+                        section.section.items = parseHomeUpdates($)
+                        break
+                    case 'list':
+                        section.section.items = parseHomeList($)
+                        break
+                }
+                sectionCallback(section.section)
+            }),
+        )
+    }
 
-    const response = await this.requestManager.schedule(request, 1)
-    const $ = this.cheerio.load(response.data)
-    const manga = parseSearch($)
-    
-    return createPagedResults({
-      results: manga,
-    })
-  }
+    // Make sure the function completes
+    await Promise.all(promises)
+    }
+
+    async getViewMoreItems(homepageSectionId: string, metadata: any): Promise<PagedResults | null> {
+        let page: number = metadata?.page ?? 1
+        let manga
+        let mData = undefined
+        switch (homepageSectionId) {
+
+            case 'updates': {
+                let request = createRequestObject({
+                    url: `${MANATOKI_DOMAIN}/bbs/page.php?hid=update&page=${page}`,
+                    method: 'GET'
+                })
+
+                let data = await this.requestManager.schedule(request, 3)
+                let $ = this.cheerio.load(data.data)
+
+                manga = parseHomeUpdates($)
+                if (page <= 9) {
+                    mData = {page: (page + 1)}
+                }
+                break
+            }
+            case 'list': {
+                let request = createRequestObject({
+                    url: `${MANATOKI_DOMAIN}/comic/p${page}`,
+                    method: 'GET'
+                })
+
+                let data = await this.requestManager.schedule(request, 3)
+                let $ = this.cheerio.load(data.data)
+
+                manga = parseHomeList($)
+                if (page <= 9) {
+                    mData = {page: (page + 1)}
+                }
+                break
+            }
+            default:
+                return Promise.resolve(null)
+        }
+
+        return createPagedResults({
+            results: manga,
+            metadata: mData
+        })
+    }
+
+    async searchRequest(query: SearchRequest): Promise<PagedResults> {
+        const search = query.title ?? ''
+        const request = createRequestObject({
+            url: `${MANATOKI_DOMAIN}/comic?stx=`,
+            method,
+            param: encodeURI(search.replace(/ /g, '+'))
+        })
+
+        const response = await this.requestManager.schedule(request, 3)
+        const $ = this.cheerio.load(response.data)
+        const manga = parseSearch($)
+        
+        return createPagedResults({
+            results: manga,
+        })
+    }
+
+    async filterUpdatedManga(mangaUpdatesFoundCallback: (updates: MangaUpdates) => void, time: Date, ids: string[]): Promise<void> {
+        let page: number = 1
+        let loadNextPage = true
+        while (loadNextPage) {
+            const request = createRequestObject({
+                url: `${MANATOKI_DOMAIN}/bbs/page.php?hid=update&page=${page}`,
+                method: 'GET'
+            })
+
+            let data = await this.requestManager.schedule(request, 3)
+            let $ = this.cheerio.load(data.data)
+
+            let updatedManga = parseUpdatedMangas($, time, ids, this)
+            loadNextPage = updatedManga.loadNextPage
+            if (loadNextPage) {
+                page++
+            }
+            if (updatedManga.updates.length > 0) {
+                mangaUpdatesFoundCallback(createMangaUpdates({
+                    ids: updatedManga.updates
+                }))
+            }
+        }
+    }
 }

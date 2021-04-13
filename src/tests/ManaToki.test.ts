@@ -74,8 +74,8 @@ describe('ManaToki Tests', function () {
     it("Testing Home-Page aquisition", async() => {
         let homePages = await wrapper.getHomePageSections(source)
         expect(homePages, "No response from server").to.exist
-        expect(homePages[0], "No top weekly section available").to.exist
-        expect(homePages[1], "No latest updates section available").to.exist
+        expect(homePages[0], "No updates section available").to.exist
+        expect(homePages[1], "No list section available").to.exist
     })
 
 })
