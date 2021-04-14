@@ -116,39 +116,52 @@ export const parseChapterDetails = ($: CheerioStatic, load: Function, mangaId: s
     })
 }
 
-export const parseHomeUpdates = ($: CheerioStatic): MangaTile[] => {
+export const parseHomeUpdates = ($: CheerioStatic, collectedIds?: string[]): {manga: MangaTile[], collectedIds: string[]} => {
     let mangaTiles: MangaTile[] = []
+    if (!collectedIds) {
+        collectedIds = []
+    }
 
     for (const item of $('.post-row', '.miso-post-webzine').toArray()) {
         const id = $('a', $('.pull-right.post-info', item)).attr('href')?.split('/').pop() ?? ''
         const title = $('a', $('.post-subject', item)).children().remove().end().text().trim()
         const image = $('img', item).attr('src') ?? ''
 
-        mangaTiles.push(createMangaTile({
-            id,
-            title: createIconText({text: title}),
-            image
-        }))
+        if (!collectedIds.includes(id)) {
+            mangaTiles.push(createMangaTile({
+                id: id,
+                title: createIconText({text: title}),
+                image: image
+            }))
+            collectedIds.push(id)
+        }
     }
 
-    return mangaTiles
+    return {manga: mangaTiles, collectedIds: collectedIds}
 }
 
-export const parseHomeList = ($: CheerioStatic): MangaTile[] => {
+export const parseHomeList = ($: CheerioStatic, collectedIds?: string[]): {manga: MangaTile[], collectedIds: string[]} => {
     let mangaTiles: MangaTile[] = []
+    if (!collectedIds) {
+        collectedIds = []
+    }
+
     for (const item of $('li', '#webtoon-list-all').toArray()) {
         const id = $('a', item).attr('href')?.split('/').pop() ?? ''
         const title = $('span.title.white', item).text()
         const image = $('img', item).attr('src') ?? ''
 
-        mangaTiles.push(createMangaTile({
-            id,
-            title: createIconText({text: title}),
-            image
-        }))
+        if (!collectedIds.includes(id)) {
+            mangaTiles.push(createMangaTile({
+                id: id,
+                title: createIconText({text: title}),
+                image: image
+            }))
+            collectedIds.push(id)
+        }
     }
 
-    return mangaTiles
+    return {manga: mangaTiles, collectedIds: collectedIds}
 }
 
 export const parseSearch = ($: CheerioStatic): MangaTile[] => {

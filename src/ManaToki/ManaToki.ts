@@ -17,7 +17,7 @@ const method = 'GET'
 
 
 export const ManaTokiInfo: SourceInfo = {
-    version: '1.0.1',
+    version: '1.0.2',
     name: '마나토끼',
     icon: 'icon.png',
     author: 'nar1n',
@@ -111,10 +111,10 @@ export class ManaToki extends Source {
                 const $ = this.cheerio.load(response.data)
                 switch (section.section.id) {
                     case 'updates':
-                        section.section.items = parseHomeUpdates($)
+                        section.section.items = parseHomeUpdates($).manga
                         break
                     case 'list':
-                        section.section.items = parseHomeList($)
+                        section.section.items = parseHomeList($).manga
                         break
                 }
                 sectionCallback(section.section)
@@ -128,8 +128,10 @@ export class ManaToki extends Source {
 
     async getViewMoreItems(homepageSectionId: string, metadata: any): Promise<PagedResults | null> {
         let page: number = metadata?.page ?? 1
+        let collectedIds: string[] = metadata?.collectedIds ?? []
         let manga
         let mData = undefined
+
         switch (homepageSectionId) {
 
             case 'updates': {
@@ -141,9 +143,12 @@ export class ManaToki extends Source {
                 let data = await this.requestManager.schedule(request, 3)
                 let $ = this.cheerio.load(data.data)
 
-                manga = parseHomeUpdates($)
+                let parsedData = parseHomeUpdates($, collectedIds)
+                manga = parsedData.manga
+                collectedIds = parsedData.collectedIds
+
                 if (page <= 9) {
-                    mData = {page: (page + 1)}
+                    mData = {page: (page + 1), collectedIds: collectedIds}
                 }
                 break
             }
@@ -156,9 +161,12 @@ export class ManaToki extends Source {
                 let data = await this.requestManager.schedule(request, 3)
                 let $ = this.cheerio.load(data.data)
 
-                manga = parseHomeList($)
+                let parsedData = parseHomeList($, collectedIds)
+                manga = parsedData.manga
+                collectedIds = parsedData.collectedIds
+
                 if (page <= 9) {
-                    mData = {page: (page + 1)}
+                    mData = {page: (page + 1), collectedIds: collectedIds}
                 }
                 break
             }
