@@ -17,7 +17,7 @@ import {
 const MANGAMINT_API_BASE = "https://mangamint.kaedenoki.net/api"
 
 export const MangaMintInfo: SourceInfo = {
-    version: "1.0.2",
+    version: "1.0.3",
     name: "MangaMint",
     icon: "icon.png",
     author: "nar1n",
@@ -51,6 +51,7 @@ export class MangaMint extends Source {
         let response = await this.requestManager.schedule(request, 1)
         let mangaDetails = typeof response.data === "string" ? JSON.parse(response.data) : response.data
 
+        // Checks that json returned is not empty
         while (requestTry <= 3 && mangaDetails["title"] == "") {
             response = await this.requestManager.schedule(request, 1)
             mangaDetails = typeof response.data === "string" ? JSON.parse(response.data) : response.data
@@ -83,7 +84,7 @@ export class MangaMint extends Source {
             rating: 5,
             status: mangaStatus,
             author: mangaDetails["author"],
-            desc: mangaDetails["synopsis"]
+            desc: mangaDetails["synopsis"].split('\n\t\t\t\t\t\t')[1]
         })
 
         return manga
@@ -100,6 +101,7 @@ export class MangaMint extends Source {
         let response = await this.requestManager.schedule(request, 1)
         let mangaDetails = typeof response.data === "string" ? JSON.parse(response.data) : response.data
 
+        // Checks that json returned is not empty
         while (requestTry <= 3 && mangaDetails["title"] == "") {
             response = await this.requestManager.schedule(request, 1)
             mangaDetails = typeof response.data === "string" ? JSON.parse(response.data) : response.data
@@ -133,6 +135,7 @@ export class MangaMint extends Source {
         let response = await this.requestManager.schedule(request, 1)
         let chapterDetails = typeof response.data === "string" ? JSON.parse(response.data) : response.data
 
+        // Checks that json returned is not empty
         while (requestTry <= 3 && chapterDetails["chapter_pages"] == 0) {
             response = await this.requestManager.schedule(request, 1)
             chapterDetails = typeof response.data === "string" ? JSON.parse(response.data) : response.data
@@ -153,7 +156,6 @@ export class MangaMint extends Source {
     }
 
     async searchRequest(searchQuery: SearchRequest, metadata: any): Promise<PagedResults> {
-
         let searchTitle = searchQuery.title ?? ''
 
         let request = createRequestObject({
@@ -165,15 +167,20 @@ export class MangaMint extends Source {
         const response = await this.requestManager.schedule(request, 3)
         let searchResults = typeof response.data === "string" ? JSON.parse(response.data) : response.data
 
+        let collectedIds: string[] = []
         let mangas = []
         for (const mangaDetails of searchResults["manga_list"]) {
-            mangas.push(
-                createMangaTile({
-                    id: mangaDetails["endpoint"],
-                    image: mangaDetails["thumb"],
-                    title: createIconText({ text: mangaDetails["title"] }),
-                })
-            )
+            const id = mangaDetails["endpoint"]
+            if (!collectedIds.includes(id)) {
+                mangas.push(
+                    createMangaTile({
+                        id: id,
+                        image: mangaDetails["thumb"],
+                        title: createIconText({ text: mangaDetails["title"]})
+                    })
+                )
+                collectedIds.push(id)
+            }
         }
 
         return createPagedResults({
@@ -235,6 +242,7 @@ export class MangaMint extends Source {
 
     async getViewMoreItems(homepageSectionId: string, metadata: any): Promise<PagedResults | null> {
         let page: number = metadata?.page ?? 1
+        let collectedIds: string[] = metadata?.collectedIds ?? []
         let mangaTiles: MangaTile[] = []
         let mData = undefined
 
@@ -247,26 +255,26 @@ export class MangaMint extends Source {
         const result = typeof response.data === "string" ? JSON.parse(response.data) : response.data
 
         for (const manga of result["manga_list"]) {
-            mangaTiles.push(
-                createMangaTile({
-                    id: manga["endpoint"],
-                    image: manga["thumb"],
-                    title: createIconText({ text: manga["title"]})
-                })
-            )
+            const id = manga["endpoint"]
+            if (!collectedIds.includes(id)) {
+                mangaTiles.push(
+                    createMangaTile({
+                        id: id,
+                        image: manga["thumb"],
+                        title: createIconText({ text: manga["title"]})
+                    })
+                )
+                collectedIds.push(id)
+            }
         }
 
-        if (page <= 9) {
-            mData = {page: (page + 1)}
+        if (page <= 29) {
+            mData = {page: (page + 1), collectedIds: collectedIds}
         }
 
         return createPagedResults({
             results: mangaTiles,
             metadata: mData
         })
-    }
-
-    getMangaShareUrl(mangaId: string) {
-        return `${MANGAMINT_API_BASE}/manga/detail/${mangaId}`
     }
 }

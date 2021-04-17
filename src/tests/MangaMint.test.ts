@@ -80,6 +80,28 @@ describe("MangaMint Tests", function () {
  
         expect(homePages, "No response from server").to.exist;
     });
- 
+
+    it("Testing view more page results for POPULAR MANGA titles", async () => {
+        const resultsPage1 = await wrapper.getViewMoreItems(source, "popular", {page:1}, 1);
+        const resultsPage3 = await wrapper.getViewMoreItems(source, "popular", {page:3}, 1);
+    
+        expect(resultsPage1, "No results for page 1 for this section").to.exist;
+        expect(resultsPage3, "No results for page 3 for this section").to.exist;
+        expect(resultsPage1, "Page 1 and 3 are the same").to.not.be.eql(resultsPage3);
+    
+        const data = resultsPage1![0];
+    
+        expect(data.id, "No ID present").to.exist;
+        expect(data.image, "No image present").to.exist;
+        // Ensure that we can resolve the image
+        const promises: Promise<void>[] = [];
+        promises.push(
+            axios.get(data.image).then((imageResult: { status: any }) => {
+                expect(imageResult.status).to.equal(200);
+            })
+        );
+        await Promise.all(promises);
+        expect(data.title.text, "No title present").to.exist;
+    });
 });
  
