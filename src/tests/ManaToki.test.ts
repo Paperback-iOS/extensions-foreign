@@ -71,11 +71,43 @@ describe('ManaToki Tests', function () {
         expect(result.title, "No title").to.be.not.null;
     });
 
-    it("Testing Home-Page aquisition", async() => {
-        let homePages = await wrapper.getHomePageSections(source)
-        expect(homePages, "No response from server").to.exist
-        expect(homePages[0], "No updates section available").to.exist
-        expect(homePages[1], "No list section available").to.exist
-    })
+    it("Testing home page results for 최신화", async () => {
+        const resultsPage1 = await wrapper.getViewMoreItems(source, "list", { page: 1 }, 1);
+        const resultsPage3 = await wrapper.getViewMoreItems(source, "list", { page: 3 }, 1);
+    
+        expect(resultsPage1, "No results for page 1 for this section").to.exist;
+        expect(resultsPage3, "No results for page 3 for this section").to.exist;
+        expect(resultsPage1, "Page 1 and 3 are the same").to.not.be.eql(resultsPage3);
+    
+        const data = resultsPage1![0];
+    
+        expect(data.id, "No ID present").to.exist;
+        expect(data.image, "No image present").to.exist;
+        expect(data.title.text, "No title present").to.exist;
+    });
+    
+    it("Testing home page results for 만화목록", async () => {
+        const resultsPage1 = await wrapper.getViewMoreItems(source, "list", { page: 1 }, 1);
+        const resultsPage3 = await wrapper.getViewMoreItems(source, "list", { page: 3 }, 1);
+    
+        expect(resultsPage1, "No results for page 1 for this section").to.exist;
+        expect(resultsPage3, "No results for page 3 for this section").to.exist;
+        expect(resultsPage1, "Page 1 and 3 are the same").to.not.be.eql(resultsPage3);
+    
+        const data = resultsPage1![0];
+    
+        expect(data.id, "No ID present").to.exist;
+        expect(data.image, "No image present").to.exist;
+        expect(data.title.text, "No title present").to.exist;
+    });
+    
+    // CAN GET IP BANNED
+    it("Testing Notifications", async () => {
+        const updates = await wrapper.filterUpdatedManga(source, new Date("2021-03-26"), [mangaId]);
+    
+        expect(updates, "No server response").to.exist;
+        expect(updates, "Empty server response").to.not.be.empty;
+        expect(updates[0].ids, "No updates").to.not.be.empty;
+    });
 
 })
