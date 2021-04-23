@@ -17,7 +17,7 @@ const method = 'GET'
 
 
 export const ManaTokiInfo: SourceInfo = {
-    version: '1.0.2',
+    version: '1.0.3',
     name: '마나토끼',
     icon: 'icon.png',
     author: 'nar1n',
@@ -197,28 +197,29 @@ export class ManaToki extends Source {
         })
     }
 
-    async filterUpdatedManga(mangaUpdatesFoundCallback: (updates: MangaUpdates) => void, time: Date, ids: string[]): Promise<void> {
-        let page: number = 1
-        let loadNextPage = true
-        while (loadNextPage) {
-            const request = createRequestObject({
-                url: `${MANATOKI_DOMAIN}/bbs/page.php?hid=update&page=${page}`,
-                method: 'GET'
-            })
+    // Commented out as this leads to IP ban
+    // async filterUpdatedManga(mangaUpdatesFoundCallback: (updates: MangaUpdates) => void, time: Date, ids: string[]): Promise<void> {
+    //     let page: number = 1
+    //     let loadNextPage = true
+    //     while (loadNextPage) {
+    //         const request = createRequestObject({
+    //             url: `${MANATOKI_DOMAIN}/bbs/page.php?hid=update&page=${page}`,
+    //             method: 'GET'
+    //         })
 
-            let data = await this.requestManager.schedule(request, 3)
-            let $ = this.cheerio.load(data.data)
+    //         let data = await this.requestManager.schedule(request, 3)
+    //         let $ = this.cheerio.load(data.data)
 
-            let updatedManga = parseUpdatedMangas($, time, ids, this)
-            loadNextPage = updatedManga.loadNextPage
-            if (loadNextPage) {
-                page++
-            }
-            if (updatedManga.updates.length > 0) {
-                mangaUpdatesFoundCallback(createMangaUpdates({
-                    ids: updatedManga.updates
-                }))
-            }
-        }
-    }
+    //         let updatedManga = parseUpdatedMangas($, time, ids, this)
+    //         loadNextPage = updatedManga.loadNextPage
+    //         if (loadNextPage) {
+    //             page++
+    //         }
+    //         if (updatedManga.updates.length > 0) {
+    //             mangaUpdatesFoundCallback(createMangaUpdates({
+    //                 ids: updatedManga.updates
+    //             }))
+    //         }
+    //     }
+    // }
 }
