@@ -7,7 +7,8 @@ import {
     SearchRequest,
     PagedResults,
     SourceInfo,
-    MangaUpdates
+    MangaUpdates,
+    TagType
 } from "paperback-extensions-common"
 import {parseChapterDetails, parseChapters, parseHomeUpdates, parseHomeList, parseMangaDetails, parseSearch, parseUpdatedMangas} from "./ManaTokiParser"
 
@@ -24,7 +25,13 @@ export const ManaTokiInfo: SourceInfo = {
     authorWebsite: 'https://github.com/nar1n',
     description: 'Extension that pulls manga from ManaToki',
     hentaiSource: false,
-    websiteBaseURL: MANATOKI_DOMAIN
+    websiteBaseURL: MANATOKI_DOMAIN,
+    sourceTags: [
+        {
+            text: "Korean",
+            type: TagType.GREY
+        }
+    ]
 }
 
 export class ManaToki extends Source {
