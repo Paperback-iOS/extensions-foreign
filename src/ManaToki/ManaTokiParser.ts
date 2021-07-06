@@ -78,7 +78,7 @@ export const parseMangaDetails = ($: CheerioStatic, mangaId: string): Manga => {
 export const parseChapters = ($: CheerioStatic, mangaId: string): Chapter[] => {
     const chapters: Chapter[] = []
     for (const chapter of $('li', $('ul.list-body', 'div.serial-list').first()).toArray()) {
-        const name = $('a', chapter).first().text().split('\n')[5].split(' ').filter(x => x != '').slice(0, -1).join(' ').trim()
+        const name = $('a', chapter).children().remove().end().text().trim()
         const id = $('a', chapter).first().attr('href')?.split('/').pop()?.split('?')[0] ?? ''
         const time = parseTime($('div.wr-date.hidden-xs', chapter).text().replace('\n', '').trim())
         chapters.push(createChapter({
