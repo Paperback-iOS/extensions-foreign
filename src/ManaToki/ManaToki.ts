@@ -18,7 +18,7 @@ const method = 'GET'
 
 
 export const ManaTokiInfo: SourceInfo = {
-    version: '1.0.3',
+    version: '1.0.4',
     name: '마나토끼',
     icon: 'icon.png',
     author: 'nar1n',
